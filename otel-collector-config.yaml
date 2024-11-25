@@ -1,0 +1,40 @@
+mode: "daemonset"
+image:
+  repository: "otel/opentelemetry-collector-k8s"
+command:
+  name: "otelcol-k8s" 
+service:
+  enabled: true
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  extensions:
+    health_check:
+      endpoint: 0.0.0.0:13133
+
+  exporters:
+    debug:
+      verbosity: detailed
+    otlphttp/jaeger:
+      endpoint: http://jaeger-jaeger-all-in-one.default.svc.cluster.local:4318
+      tls:
+        insecure: true
+
+  service:
+    extensions:
+      - health_check
+    pipelines:
+      metrics:
+        receivers: [otlp]
+        exporters: [debug, otlphttp/jaeger]
+
+      traces:
+        receivers: [otlp]
+        exporters: [debug, otlphttp/jaeger]
